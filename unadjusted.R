@@ -40,8 +40,10 @@ ESP <- data.frame(age = c("Y00",
                                              2500,
                                              2500))
 
-population_in <- read.csv2(file = "population.csv", sep = ",")
-deaths_in <- read.csv2(file = "deaths.csv", sep = ",")
+population_in <- read.csv2(file = "population.csv", sep = ",") %>%
+  filter(time == 2014)
+deaths_in <- read.csv2(file = "deaths.csv", sep = ",") %>%
+  filter(time == 2014)
 
 df <- left_join(deaths_in, population_in, by = c("time", "geo", "age", "sex"))
 

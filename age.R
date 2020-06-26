@@ -40,17 +40,16 @@ ESP <- data.frame(age = c("Y00",
                                              2500,
                                              2500))
 
-population_in <- read.csv2(file = "population.csv", sep = ",")
-deaths_in <- read.csv2(file = "deaths.csv", sep = ",")
+population_in <- read.csv2(file = "population.csv", sep = ",") %>%
+  filter(time == 2014)
+deaths_in <- read.csv2(file = "deaths.csv", sep = ",") %>%
+  filter(time == 2014)
 
 df <- left_join(deaths_in, population_in, by = c("time", "geo", "age", "sex"))
 
 df <- left_join(df, ESP, by = c("age"))
 
 df_1 <- df %>%
-  filter(age != "Y75-79",
-         age != "Y80-84",
-         age != "Y_GE85") %>%
   mutate(death_rate = deaths / population,
          ESP_death_rate = death_rate * ESP)
 

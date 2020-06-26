@@ -21,6 +21,7 @@ population_in <- read.csv2(file = "population.csv", sep = ",")
 ehis_prevalence_in <- read.csv2(file = "ehis_prevalence.csv", sep = ",")
 
 population_in <- population_in %>%
+  filter(time == 2014) %>%
   filter(age != "Y00",
          age != "Y01-04",
          age != "Y05-09",
@@ -51,7 +52,8 @@ prevalent_cases <- prevalent_cases %>%
                            hlth_pb == "PB2423" ~ "N00-N29",
                            hlth_pb == "PB2430" ~ "E10-E14"))
 
-deaths_in <- read.csv2(file = "deaths2017.csv", sep = ",")
+deaths_in <- read.csv2(file = "deaths.csv", sep = ",") %>%
+  filter(time == 2016)
 
 deaths_of_interest <- c("J45_J46", "J40-J44_J47", "I20-I25", "I60-I69", "K70_K73_K74", "N00-N29", "E10-E14")
 

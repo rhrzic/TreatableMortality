@@ -28,21 +28,12 @@ causes_of_interest <- c("A15-A19_B90", "B15-B19_B942", "B180-B182", "B20-B24",
                         "N00-N29", "O", "P", "V01-Y89", "V01-Y89_OTH", "X60-X84_Y870", 
                         "X85-Y09_Y871", "Y10-Y34_Y872")
 
-deaths2014 <- deaths %>% 
-  filter(icd10 %in% causes_of_interest & time == 2014) %>%
+deaths <- deaths %>% 
+  filter(icd10 %in% causes_of_interest) %>%
   mutate(deaths = values) %>%
   select(sex, age, icd10, geo, time, deaths)
 
-deaths2017 <- deaths %>% 
-  filter(icd10 %in% causes_of_interest & time == 2017) %>%
-  mutate(deaths = values) %>%
-  select(sex, age, icd10, geo, time, deaths)
-
-write.csv(deaths2014, "deaths2014.csv", row.names=F)
-
-write.csv(deaths2014, "deaths.csv", row.names=F)
-
-write.csv(deaths2017, "deaths2017.csv", row.names=F)
+write.csv(deaths, "deaths.csv", row.names=F)
 
 deaths %>%
   group_by(icd10, age, sex, geo) %>%
@@ -70,8 +61,7 @@ write.csv(ehis_prevalence, "ehis_prevalence.csv", row.names=F)
 
 ## Population ##
 
-population <- get_eurostat("demo_pjangroup", time_format = "num", filters = list(time = 2014,
-                                                                                 sex = c("M", "F"),
+population <- get_eurostat("demo_pjangroup", time_format = "num", filters = list(sex = c("M", "F"),
                                                                                  geo = geo_include))
 population <- population %>%
   filter(!(age %in% c("TOTAL", "Y_GE75", "Y_GE80", "UNK", "Y_LT5"))) %>%
@@ -79,8 +69,7 @@ population <- population %>%
 
 population_LT1 <- get_eurostat("demo_pjan", time_format = "num", filters = list(age = "Y_LT1",
                                                                                 sex = c("M", "F"),
-                                                                                geo = geo_include,
-                                                                                time = 2014))
+                                                                                geo = geo_include))
 
 population_LT1 <- population_LT1 %>%
   mutate(age = replace(age, age == "Y_LT1", "Y00"))
@@ -88,8 +77,7 @@ population_LT1 <- population_LT1 %>%
 
 population_1_4 <- get_eurostat("demo_pjan", time_format = "num", filters = list(age = c("Y1", "Y2", "Y3", "Y4"),
                                                                                 sex = c("M", "F"),
-                                                                                geo = geo_include,
-                                                                                time = 2014))
+                                                                                geo = geo_include))
 
 population_1_4 <- population_1_4 %>%
   pivot_wider(names_from = age, values_from = values) %>%
@@ -99,7 +87,7 @@ population_1_4 <- population_1_4 %>%
 
 population <- rbind(population_LT1, population_1_4, population)
 
-age_groups <- unique(deaths_in$age)
+age_groups <- unique(deaths$age)
 
 population <- population %>%
   mutate(population = values,
