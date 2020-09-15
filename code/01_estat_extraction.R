@@ -1,7 +1,7 @@
+rm(list=ls())
+
 require(eurostat)
 require(tidyverse)
-require(stringr)
-require(ggplot2)
 
 geo_include = c("AT", "BE", "BG", "CZ", "DK", "DE", "DE_TOT", "FR", "EE", "IE", "EL", "ES", "HR", "IT", "CY", "LV", 
                 "LT", "LU", "HU", "MT", "NL", "PL", "PT", "RO", "SI", "SK", "FI", "SE", "UK", "IS", "NO")
@@ -14,8 +14,8 @@ deaths <- deaths %>%
   filter(sex %in% c("M", "F"),
          geo %in% geo_include,
          resid == "TOT_IN",
-         !(age %in% c("TOTAL", "Y_LT15", "Y_LT25", "Y_LT65", "Y_GE65", "Y85-89", "Y90-94", "Y_GE95",
-                      "Y15-24"))) %>%
+         !age %in% c("TOTAL", "Y_LT15", "Y_LT25", "Y_LT65", "Y_GE65", "Y85-89", "Y90-94", "Y_GE95",
+                      "Y15-24")) %>%
   mutate(age = replace(age, age == "Y1-4", "Y01-04"),
          age = replace(age, age == "Y5-9", "Y05-09"),
          age = replace(age, age == "Y_LT1", "Y00")) 
@@ -33,11 +33,11 @@ deaths <- deaths %>%
   mutate(deaths = values) %>%
   select(sex, age, icd10, geo, time, deaths)
 
-write.csv(deaths, "deaths.csv", row.names=F)
+saveRDS(deaths, "data/deaths.rds")
 
 deaths %>%
   group_by(icd10, age, sex, geo) %>%
-  summarise(missing = sum(is.na(values)) / n()) %>%
+  summarise(missing = sum(is.na(deaths)) / n()) %>%
   ggplot(aes(x = age, y = icd10, fill = missing))+
   geom_tile()+
   facet_grid(sex ~ geo) +
@@ -54,17 +54,18 @@ ehis_prevalence <- ehis_prevalence %>%
          citizen == "NAT",
          geo %in% geo_include,
          !(age %in% c("TOTAL", "Y15-29", "Y15-44", "Y15-64", "Y25-64", "Y45-64", "Y_GE65")),
-         hlth_pb %in% conditions_of_interest)
+         hlth_pb %in% conditions_of_interest) %>%
+  mutate(hlth_pb_label = label_eurostat(hlth_pb, dic = "hlth_pb")) %>%
+  select(hlth_pb, hlth_pb_label, time, geo, sex, age, prevalence = values)
 
-write.csv(ehis_prevalence, "ehis_prevalence.csv", row.names=F)
-
+saveRDS(ehis_prevalence, "data/ehis_prevalence.rds")
 
 ## Population ##
 
 population <- get_eurostat("demo_pjangroup", time_format = "num", filters = list(sex = c("M", "F"),
                                                                                  geo = geo_include))
 population <- population %>%
-  filter(!(age %in% c("TOTAL", "Y_GE75", "Y_GE80", "UNK", "Y_LT5"))) %>%
+  filter(!age %in% c("TOTAL", "Y_GE75", "Y_GE80", "UNK", "Y_LT5")) %>%
   mutate(age = replace(age, age == "Y5-9", "Y05-09"))
 
 population_LT1 <- get_eurostat("demo_pjan", time_format = "num", filters = list(age = "Y_LT1",
@@ -95,7 +96,4 @@ population <- population %>%
   filter(age %in% age_groups) %>%
   select(sex, age, geo, time, population)
 
-write.csv(population, "population.csv", row.names=F)
-
-
-## 
+saveRDS(population, "data/population.rds")
