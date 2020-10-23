@@ -35,12 +35,12 @@ oop_spending <- get_eurostat("hlth_sha11_hf", time_format = "num", filters = lis
 spending <- left_join(total_spending, govt_spending, by = "Country") %>%
   select(Country, ends_with("_rank"))
 
-female_ranks <- read_xlsx(path = "data/women.xlsx", col_types = c("text", rep("numeric", 10)))
+female_ranks <- read_xlsx(path = "data/women.xlsx", col_types = c("text", rep("numeric", 11)))
 oop_female_ranks <- right_join(female_ranks, oop_spending, by = "Country")
 female_ranks <- left_join(female_ranks, spending, by = "Country")
   
 
-male_ranks <- read_xlsx(path = "data/men.xlsx", col_types = c("text", rep("numeric", 10)))
+male_ranks <- read_xlsx(path = "data/men.xlsx", col_types = c("text", rep("numeric", 11)))
 oop_male_ranks <- right_join(male_ranks, oop_spending, by = "Country")
 male_ranks <- left_join(male_ranks, spending, by = "Country")
 

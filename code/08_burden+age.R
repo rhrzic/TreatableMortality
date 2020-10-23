@@ -50,17 +50,20 @@ GBD2014 <- GBD2014 %>%
   select(measure = measure_name, geo = location_name, sex = sex_name, age = age_name, 
          cause = cause_name, metric = metric_name, year, val) %>%
   mutate(val = as.numeric(val)) %>%
-  filter(!age %in% c("85 to 89", "90 to 94", "95 plus")) %>%
-  filter(!(age == "80 to 84" & sex == "Male"))
+  mutate(age = ifelse(age %in% c("90 to 94", "95 plus"), "90 plus", age)) %>%
+  group_by(measure, geo, sex, age, cause, metric, year) %>%
+  summarise(val = sum(val))
 
-treatable_burden <- left_join(GBD2014, ESP, by = "age") %>%
+treatable_burden_sexlimits <- left_join(GBD2014, ESP, by = "age") %>%
+  filter(!age %in% c("85 to 89", "90 plus")) %>%
+  filter(!(age == "80 to 84" & sex == "Male")) %>%
   mutate(ESP_rate = val * ESP/100000)
 
-treatable_burden_total <- treatable_burden %>%
+treatable_burden_total_sexlimits <- treatable_burden_sexlimits %>%
   group_by(geo, sex, measure) %>%
   summarise(ESP_burden = sum(ESP_rate))
 
-treatable_burden_byicd10 <- treatable_burden %>%
+treatable_burden_byicd10_sexlimits <- treatable_burden_sexlimits %>%
   mutate(disease_group = case_when(cause %in% c("Ischemic heart disease", "Stroke", "Rheumatic heart disease", "Aortic aneurysm") ~ "Circulatory disease",
                                    str_detect(cause, "cancer") | cause %in% c("Malignant skin melanoma", "Hodgkin lymphoma") ~ "Cancers",
                                    TRUE ~ "Other")) %>%
@@ -129,7 +132,7 @@ country_codes <- data.frame(code = c("AT",
 
 
 
-treatable_YLL_sexlimits_total <- treatable_burden_total %>%
+treatable_YLL_sexlimits_total <- treatable_burden_total_sexlimits %>%
   filter(measure == "YLLs (Years of Life Lost)") %>%
   mutate(DALYs = round(ESP_burden, 2)) %>%
   group_by(sex) %>%
@@ -145,7 +148,7 @@ treatable_YLL_sexlimits_total <- bind_rows(treatable_YLL_sexlimits_total, summar
 
 write.xlsx(treatable_YLL_sexlimits_total, 'results/treatable_YLL_sexlimits_total.xlsx')
 
-treatable_YLL_sexlimits_byicd10 <- treatable_burden_byicd10 %>%
+treatable_YLL_sexlimits_byicd10 <- treatable_burden_byicd10_sexlimits %>%
   filter(measure == "YLLs (Years of Life Lost)") %>%
   mutate(DALYs = round(ESP_burden, 2)) %>%
   group_by(sex, disease_group) %>%
@@ -156,6 +159,53 @@ treatable_YLL_sexlimits_byicd10 <- treatable_burden_byicd10 %>%
   pivot_wider(names_from = c(sex, disease_group), values_from = c(DALYs, rank))
 
 write.xlsx(treatable_YLL_sexlimits_byicd10, 'results/treatable_YLL_sexlimits_bydisease.xlsx')
+
+## NO age limits
+
+treatable_burden_nolimits <- left_join(GBD2014, ESP, by = "age") %>%
+  mutate(ESP_rate = val * ESP/100000)
+
+treatable_burden_total_nolimits <- treatable_burden_nolimits %>%
+  group_by(geo, sex, measure) %>%
+  summarise(ESP_burden = sum(ESP_rate, na.rm=T))
+
+treatable_burden_byicd10_nolimits <- treatable_burden_nolimits %>%
+  mutate(disease_group = case_when(cause %in% c("Ischemic heart disease", "Stroke", "Rheumatic heart disease", "Aortic aneurysm") ~ "Circulatory disease",
+                                   str_detect(cause, "cancer") | cause %in% c("Malignant skin melanoma", "Hodgkin lymphoma") ~ "Cancers",
+                                   TRUE ~ "Other")) %>%
+  group_by(geo, sex, disease_group, measure) %>%
+  summarise(ESP_burden = sum(ESP_rate))
+
+
+treatable_YLL_nolimits_total <- treatable_burden_total_nolimits %>%
+  filter(measure == "YLLs (Years of Life Lost)") %>%
+  mutate(DALYs = round(ESP_burden, 2)) %>%
+  group_by(sex) %>%
+  mutate(rank = rank(DALYs)) %>%
+  select(geo, DALYs, rank) %>%
+  left_join(., country_codes, by = c("geo" = "name")) %>%
+  select(code, sex, DALYs, rank) %>%
+  pivot_wider(names_from = sex, values_from = c(DALYs, rank))
+
+treatable_YLL_nolimits_total <- bind_rows(treatable_YLL_nolimits_total, summary_stats(treatable_YLL_nolimits_total$DALYs_Female, 
+                                                                                      treatable_YLL_nolimits_total$DALYs_Male, 
+                                                                                        "DALYs_Female", "DALYs_Male"))
+
+write.xlsx(treatable_YLL_nolimits_total, 'results/treatable_YLL_nolimits_total.xlsx')
+
+treatable_YLL_nolimits_byicd10 <- treatable_burden_byicd10_nolimits %>%
+  filter(measure == "YLLs (Years of Life Lost)") %>%
+  mutate(DALYs = round(ESP_burden, 2)) %>%
+  group_by(sex, disease_group) %>%
+  mutate(rank = rank(DALYs)) %>%
+  select(geo, sex, disease_group, DALYs, rank) %>%
+  left_join(., country_codes, by = c("geo" = "name")) %>%
+  select(code, sex, DALYs, rank) %>%
+  pivot_wider(names_from = c(sex, disease_group), values_from = c(DALYs, rank))
+
+write.xlsx(treatable_YLL_nolimits_byicd10, 'results/treatable_YLL_nolimits_byicd10.xlsx')
+
+
 
 
 

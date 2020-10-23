@@ -5,13 +5,13 @@ library(readxl)
 require(openxlsx)
 library(corrr)
 
-female_ranks <- read_xlsx(path = "data/women.xlsx", col_types = c("text", rep("numeric", 10)))
+female_ranks <- read_xlsx(path = "data/women.xlsx", col_types = c("text", rep("numeric", 11)))
 
-male_ranks <- read_xlsx(path = "data/men.xlsx", col_types = c("text", rep("numeric", 10)))
+male_ranks <- read_xlsx(path = "data/men.xlsx", col_types = c("text", rep("numeric", 11)))
 
-female_num <- select(female_ranks, Unadjusted:Treatable_YLLs_under_85)
+female_num <- select(female_ranks, Unadjusted:Treatable_YLLs_nolimit)
 
-male_num <- select(male_ranks, Unadjusted:Treatable_YLLs_under_80)
+male_num <- select(male_ranks, Unadjusted:Treatable_YLLs_nolimit)
 
 
 female_cor <- correlate(x = female_num, method = "spearman") %>%
@@ -36,8 +36,9 @@ female_ranks_diff <- female_ranks %>%
          diff_no_age = No_age_limits - Unadjusted,
          diff_high_age = as.numeric(Higher_age) - Unadjusted,
          diff_sex_age = Sex_specific_age - Unadjusted,
-         diff_YLL_85 = Treatable_YLLs_under_85 - Unadjusted) %>%
-  select(Country, Unadjusted, diff_prevalence:diff_YLL_85)
+         diff_YLL_85 = Treatable_YLLs_under_85 - Unadjusted,
+         diff_YLL_nolimit = Treatable_YLLs_nolimit - Unadjusted) %>%
+  select(Country, Unadjusted, diff_prevalence:diff_YLL_nolimit)
 
 female_per_country <- female_ranks_diff %>%
   select(starts_with("diff")) %>%
@@ -64,8 +65,9 @@ male_ranks_diff <- male_ranks %>%
          diff_no_age = No_age_limits - Unadjusted,
          diff_high_age = as.numeric(Higher_age) - Unadjusted,
          diff_sex_age = Sex_specific_age - Unadjusted,
-         diff_YLL_80 = Treatable_YLLs_under_80 - Unadjusted) %>%
-  select(Country, Unadjusted, diff_prevalence:diff_YLL_80)
+         diff_YLL_80 = Treatable_YLLs_under_80 - Unadjusted,
+         diff_YLL_nolimit = Treatable_YLLs_nolimit - Unadjusted) %>%
+  select(Country, Unadjusted, diff_prevalence:diff_YLL_nolimit)
 
 male_per_country <- male_ranks_diff %>%
   select(starts_with("diff")) %>%
